@@ -3,7 +3,7 @@ import base64
 import os
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from groq import Groq
+from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -23,8 +23,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-api_key = os.environ.get("GROQ_API_KEY")
-client = Groq(api_key=api_key) if api_key else None
+api_key = os.environ.get("OPENROUTER_API_KEY")
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=api_key,
+) if api_key else None
 
 
 @app.get("/")
@@ -35,7 +38,7 @@ def health():
 @app.post("/extract")
 async def extract_text(file: UploadFile = File(...)):
     if not client:
-        raise HTTPException(status_code=500, detail="GROQ_API_KEY is not configured on the server")
+        raise HTTPException(status_code=500, detail="OPENROUTER_API_KEY is not configured on the server")
 
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
@@ -45,7 +48,7 @@ async def extract_text(file: UploadFile = File(...)):
 
     try:
         response = client.chat.completions.create(
-            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            model="google/gemini-3-flash-preview",
             messages=[
                 {
                     "role": "user",
