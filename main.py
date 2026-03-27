@@ -23,7 +23,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+api_key = os.environ.get("GROQ_API_KEY")
+client = Groq(api_key=api_key) if api_key else None
 
 
 @app.get("/")
@@ -33,6 +34,9 @@ def health():
 
 @app.post("/extract")
 async def extract_text(file: UploadFile = File(...)):
+    if not client:
+        raise HTTPException(status_code=500, detail="GROQ_API_KEY is not configured on the server")
+
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
 
